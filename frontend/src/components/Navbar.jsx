@@ -1,21 +1,85 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import CartDrawer from "./CartDrawer";
+import {getAllProducts} from '../services/productApi'
+import { CartAPI } from "../services/cartApi";
 
-export default function Navbar({cartItems,deleteItem,updateItemQuantity}){
+export default function Navbar(){
 
   const [isLoggesIn, setIsLoggedIn] = useState(false)
   const [showDrawer, setShowDrawer] = useState(false);
-  
+  const [products,setProducts] = useState([])
+  const [cart, setCart] = useState([]);
+
   useEffect(() => {
     if (localStorage.getItem('authTokens')){
       setIsLoggedIn(false)
-    }
+    }    
+    const fetchProducts = async () =>{
+      try {
+        const data = await getAllProducts();
+        setProducts(data)
+      }catch(err){
+        console.log('error loading products ',err)
+      }
+    };
+  
+    fetchProducts();
   },[])
+
+  useEffect(() => {
+    if (products.length > 0) {
+      fetchCartItems();
+    }
+  }, [products]);
+
+  const fetchCartItems = async () => {
+    try {
+      const data = await CartAPI.getCart();
+      const cartItems = data.map(cartItem => {
+        const product = products.find(prod => prod.id === cartItem.product);
+        return {
+          ...product,
+          cart_id : cartItem.id,
+          quantity: cartItem.quantity,
+        };
+      });
+      setCart(cartItems);
+      console.log("cart details:", cartItems);
+    } catch (err) {
+      console.log('Error loading cart items:', err);
+    }
+  };
+
+  const deleteItem = async (cartId) => {
+    try{
+      await CartAPI.removeItem(cartId)
+      console.log('item deleted')
+      fetchCartItems()
+    }catch(err){
+      console.log('error while deleting item from cart',err)
+    }
+  }
+
+  const updateItemQuantity = async(cartId,newQuantity) => {
+    try{
+      await CartAPI.updateItemQuantity(cartId,newQuantity)
+      // fetchCartItems()
+      setCart((prevItems) =>
+        prevItems.map((item) =>
+          item.cart_id === cartId ? { ...item, quantity: newQuantity } : item
+        )
+      );
+      console.log(cart)
+      console.log('item quantity updated')
+    }catch(err){
+      console('error while upating carte quantity',err)
+    }
+  }
 
     return (
       <>
-        <CartDrawer showDrawer={showDrawer} setShowDrawer={setShowDrawer} cartItems={cartItems} deleteItem={deleteItem} updateItemQuantity={updateItemQuantity}/>
+        <CartDrawer showDrawer={showDrawer} setShowDrawer={setShowDrawer} cartItems={cart} deleteItem={deleteItem} updateItemQuantity={updateItemQuantity}/>
 
         <nav className="bg-gray-800">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -41,10 +105,10 @@ export default function Navbar({cartItems,deleteItem,updateItemQuantity}){
             <div className="hidden sm:ml-6 sm:block">
               <div className="flex space-x-4">
                 {/* <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" --> */}
-                <Link to="/" className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">Dashboard</Link>
-                <Link to="/" onClick={() => {setShowDrawer(true)}} className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Cart</Link>
-                <Link to="/" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Projects</Link>
-                <Link to="/" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Calendar</Link>
+                <Link to="/" className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">Home</Link>
+                <Link onClick={() => {setShowDrawer(true)}} className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Cart</Link>
+                <Link to="/orders" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Orders</Link>
+                <Link to="/products" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Products</Link>
               </div>
             </div>
           </div>

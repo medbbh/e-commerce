@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function CartDrawer({ showDrawer, setShowDrawer, cartItems, deleteItem, updateItemQuantity }) {
 
@@ -120,9 +121,10 @@ export default function CartDrawer({ showDrawer, setShowDrawer, cartItems, delet
                       <p className="text-center text-sm text-gray-600 mb-3">
                         Shipping and taxes calculated at checkout
                       </p>
-                      <button className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
+                      <Link to="orders" className="block w-full text-center bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
                         Checkout
-                      </button>
+                      </Link>
+
                     </section>
                   ) : (
                     <p>Your cart is empty</p>

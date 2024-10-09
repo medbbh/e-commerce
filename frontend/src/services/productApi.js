@@ -7,13 +7,18 @@ const customaxios = axios.create({
     },
 })
 
-// fetch all products
-export const getAllProducts = async () => {
+const API_URL = 'http://localhost:8000/api'
+
+
+export const getAllProducts = async (categoryId = null) => {
     try {
-        const response = await axios.get('http://localhost:8000/api/products/');
-        return response.data
-    }catch(err){
-        console.log("Error fecthing products ", err)
-        throw err
+        const url = categoryId 
+            ? `${API_URL}/products/?category_id=${categoryId}`
+            : `${API_URL}/products/`;
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        throw error;
     }
-}
+};

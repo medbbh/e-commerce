@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext'; // Make sure this path is correct
+import jwt_decode from 'jwt-decode';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,7 +15,11 @@ export default function Login() {
     setError('');
     const success = await loginUser(email, password);
     if (success) {
-      navigate('/'); // Redirect to dashboard or home page after successful login
+      if (JSON.parse(localStorage.getItem('authTokens')).user.role == 3){
+        navigate('/');
+      }else if(JSON.parse(localStorage.getItem('authTokens')).user.role == 2){
+        navigate('/dashbord');
+      }
     } else {
       setError('Login failed. Please check your credentials and try again.');
     }

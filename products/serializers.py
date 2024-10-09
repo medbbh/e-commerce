@@ -7,9 +7,11 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CategorySerializer(serializers.ModelSerializer):
+    products = ProductSerializer(many=True, read_only=True, source='product_set')
+
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ['id','name','products']
 
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(default=serializers.CurrentUserDefault(), read_only=True)

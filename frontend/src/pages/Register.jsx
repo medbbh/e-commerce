@@ -31,7 +31,7 @@ export default function Register() {
         // Registration successful, now login
         const loginSuccess = await loginUser(email, password);
         if (loginSuccess) {
-          navigate('/dashboard'); // Redirect to dashboard after successful registration and login
+          navigate('/'); // Redirect to dashboard after successful registration and login
         } else {
           setError('Registration successful, but login failed. Please try logging in manually.');
         }
