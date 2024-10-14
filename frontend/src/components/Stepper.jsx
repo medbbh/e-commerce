@@ -2,7 +2,7 @@ import { useState } from "react";
 import AdressInfo from "./AdressInfo";
 import Payment from "./Payment";
 import { CartAPI } from "../services/cartApi";
-import { OderAPI } from "../services/orderApi";
+import { OrderAPI } from "../services/orderApi";
 
 export default function Stepper() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -29,7 +29,7 @@ export default function Stepper() {
 
   const handleFinalStep = async () => {
     try {
-        await OderAPI.addOrder();
+        await OrderAPI.addOrder();
         console.log('order passed successfully')
       }catch (error) {
         console.log('error while adding item to cart',error)

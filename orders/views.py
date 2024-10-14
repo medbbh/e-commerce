@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from .models import Order, OrderItem
 from carts.models import ShoppingCart, CartItem
@@ -13,7 +14,13 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.filter(customer=self.request.user)
+        return Order.objects.filter(customer=self.request.user).order_by('-ordered_at')
+    
+    @action(detail=False, methods=['get'], url_path='all-orders')
+    def all_orders(self, request):
+        orders = Order.objects.all().order_by('-ordered_at')
+        serializer = self.get_serializer(orders, many=True)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
 
@@ -36,21 +43,42 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
         cart.items.all().delete()
 
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated])
-    def update_status(self, request, pk=None):
-        order = self.get_object()
-        new_status = request.data.get('status')
+    @action(detail=True, methods=['patch'], url_path='update-status')
+    def update_order_status(self, request, pk=None):
+        try:
+            # Get the order by pk without user restrictions
+            order = get_object_or_404(Order, pk=pk)  # This will allow any user to fetch any order
 
-        if new_status not in ['Pending', 'Shipped', 'Delivered', 'Cancelled']:
-            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        order.status = new_status
-        order.save()
-        return Response({'status': f"Order status updated to {order.status}"})
+            new_status = request.data.get('status')
+
+            if not new_status:
+                return Response({'error': 'Status field is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate the status
+            valid_statuses = ['Pending', 'Shipped', 'Delivered', 'Cancelled']
+            if new_status not in valid_statuses:
+                return Response(
+                    {'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Update the order status
+            order.status = new_status
+            order.save()
+
+            # Serialize and return the updated order
+            serializer = self.get_serializer(order)
+            return Response(serializer.data)
+
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     # This is for retrieving the user's order history
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def order_history(self, request):
-        orders = self.get_queryset()
+        orders = self.get_queryset().order_by('-ordered_at')
         serializer = self.get_serializer(orders, many=True)
         return Response(serializer.data)

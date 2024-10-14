@@ -11,11 +11,11 @@ class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField()
     description = models.TextField()
-    image = models.FileField()
+    image = models.FileField(blank=True,null=True)
     category_id = models.ForeignKey(Category,on_delete=models.CASCADE)
     count_in_stock = models.IntegerField()
     rating = models.FloatField()
-    num_of_reviews = models.IntegerField
+    num_of_reviews = models.IntegerField()
 
     def __str__(self):
         return self.name

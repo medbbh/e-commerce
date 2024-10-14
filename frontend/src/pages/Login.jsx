@@ -18,7 +18,7 @@ export default function Login() {
       if (JSON.parse(localStorage.getItem('authTokens')).user.role == 3){
         navigate('/');
       }else if(JSON.parse(localStorage.getItem('authTokens')).user.role == 2){
-        navigate('/dashbord');
+        navigate('/admin/dashboard');
       }
     } else {
       setError('Login failed. Please check your credentials and try again.');

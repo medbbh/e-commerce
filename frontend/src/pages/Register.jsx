@@ -21,7 +21,7 @@ export default function Register() {
     }
 
     try {
-      // Replace with your actual registration API endpoint
+
       const response = await axios.post('http://127.0.0.1:8000/auth/users/', {
         email,
         password
@@ -31,9 +31,7 @@ export default function Register() {
         // Registration successful, now login
         const loginSuccess = await loginUser(email, password);
         if (loginSuccess) {
-          navigate('/'); // Redirect to dashboard after successful registration and login
-        } else {
-          setError('Registration successful, but login failed. Please try logging in manually.');
+          navigate('/login');
         }
       }
     } catch (error) {

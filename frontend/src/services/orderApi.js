@@ -22,26 +22,56 @@ api.interceptors.request.use(
   }
 );
 
+export const OrderAPI = {
 
-export const OderAPI =  {
-    
-    getOrders: async () => {
-        try {
-          const response = await api.get('/orders/');
-          return response.data;
-        } catch (error) {
-          console.error('Error fetching Orders:', error);
-          throw error;
-        }
-    },
+  getOrders: async () => {
+    try {
+      const response = await api.get('/orders/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Orders:', error);
+      throw error;
+    }
+  },
 
-    addOrder: async () => {
-        try {
-          const response = await api.post('/orders/');
-          return response.data;
-        } catch (error) {
-          console.error('Error while confirming the order: ', error);
-          throw error;
-        }
-    },
-}
+  getAllOrders: async () => {
+    try {
+      const response = await api.get('orders/all-orders/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Orders:', error);
+      throw error;
+    }
+  },
+
+  addOrder: async () => {
+    try {
+      const response = await api.post('/orders/');
+      return response.data;
+    } catch (error) {
+      console.error('Error while confirming the order: ', error);
+      throw error;
+    }
+  },
+
+  updateOrderStatus: async (orderId, data) => {
+    try {
+      const response = await api.patch(`/orders/${orderId}/update-status/`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  },
+
+  getDeliveryInfo: async (userId) => {
+    try {
+        const response = await api.get(`/adress/user/${userId}/`); // Adjusted to match the new endpoint
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching delivery info:', error);
+        throw error;
+    }
+},
+
+};
