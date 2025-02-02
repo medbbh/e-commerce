@@ -9,4 +9,4 @@ router.register('categories', CategorytViewSet,basename='category')
 router.register('rating', RatingtViewSet,basename='rating')
 router.register('', ProductViewSet,basename='product')
 
-urlpatterns = router.urls 
+urlpatterns = router.urls

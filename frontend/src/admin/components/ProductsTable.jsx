@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
+import ProductDetailsModal from './ProductDetail';
 
 const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, onDeleteProduct }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,6 +9,8 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
   const [itemsPerPage] = useState(7);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
 
   // Filter products based on search term
   const filteredProducts = products.filter(product =>
@@ -22,6 +25,15 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
   // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // product detail modal 
+  const handleOpenModal = (order) => {
+    setSelectedProduct(order);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedProduct(null);
+  };
+
   const openAddModal = () => {
     setEditingProduct(null);
     setIsModalOpen(true);
@@ -35,17 +47,14 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
   const handleFormSubmit = async (formData) => {
     try {
       if (editingProduct) {
-        // Handle edit
         await onUpdateProduct(editingProduct.id, formData);
       } else {
-        // Handle add
         await onAddProduct(formData);
       }
       setIsModalOpen(false);
       setEditingProduct(null);
     } catch (error) {
       console.error('Error submitting product:', error);
-      // Optionally, show an error message to the user
     }
   };
 
@@ -104,6 +113,9 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
                   <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
+                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Details
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -112,10 +124,17 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 w-10 h-10">
-                          <img className="w-full h-full rounded-full"
-                            src={product.image}
-                            alt={product.name}
-                          />
+                          {product.images && product.images.length > 0 ? (
+                            <img 
+                              className="w-full h-full rounded-full object-cover"
+                              src={product.images[0].image} 
+                              alt={product.name}
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded-full bg-gray-300 flex items-center justify-center">
+                              <span className="text-gray-500">No Image</span>
+                            </div>
+                          )}
                         </div>
                         <div className="ml-3">
                           <p className="text-gray-900 whitespace-no-wrap">
@@ -149,6 +168,15 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
                         <Trash2 size={18} />
                       </button>
                     </td>
+
+                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm whitespace-nowrap">
+                    <button
+                      onClick={() => handleOpenModal(product)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      View Details
+                    </button>
+                  </td>
                   </tr>
                 ))}
               </tbody>
@@ -188,6 +216,15 @@ const ProductsTable = ({ products, categories, onAddProduct, onUpdateProduct, on
         initialData={editingProduct}
         categories={categories}
       />
+
+
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          categories={categories}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };

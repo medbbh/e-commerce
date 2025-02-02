@@ -102,7 +102,7 @@ export default function Payment() {
           <div key={item.id} className="border rounded-lg p-3 mb-4 shadow-sm">
             <div className="flex items-center space-x-3">
               <img
-                src={item.image}
+                src={item.images[0].image}
                 alt={item.name}
                 className="w-20 h-20 object-cover rounded"
               />

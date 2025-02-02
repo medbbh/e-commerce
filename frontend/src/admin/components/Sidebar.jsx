@@ -14,7 +14,6 @@ const AdminLayout = () => {
     { icon: LayoutGrid , text: 'Categories', path: '/admin/categories' },
     { icon: BarChart2, text: 'Orders', path: '/admin/orders' },
     { icon: Users, text: 'Users', path: '/admin/users' },
-    { icon: Settings, text: 'Settings', path: '/admin/settings' },
   ];
 
   return (

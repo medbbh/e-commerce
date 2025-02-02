@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'carts',
     'orders',
     'deliveryinfo',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -154,6 +155,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    'http://127.0.0.1:5173'
 ]
 
 
@@ -175,7 +177,7 @@ DJOSER = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,

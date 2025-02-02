@@ -1,29 +1,30 @@
 import React, { useEffect, useState, useCallback } from "react";
-import Navbar from "../components/Navbar";
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import ProductCard from "../components/ProductCart";
-import { getAllProducts } from '../services/productApi';
-import { CartAPI } from "../services/cartApi";
-
-import man from '../assets/categories/man.jpg';
-import woman from '../assets/categories/woman.jpg';
-import kids from '../assets/categories/kids.jpg';
-import plants from '../assets/categories/plants.jpg';
-import { getCategories } from "../services/categoryApi";
 import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Star, TrendingUp, Tag, Truck, Mail } from 'lucide-react';
+import Navbar from "../components/Navbar";
+import ProductCard from "../components/ProductCart";
 import CategoryCards from "../components/CategoryCard";
+import { getAllProducts, getTrendingProducts, getFeaturedProducts } from '../services/productApi';
+import { CartAPI } from "../services/cartApi";
+import { getCategories } from "../services/categoryApi";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [categories, setCategories] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [email, setEmail] = useState('');
+  const [alert, setAlert] = useState({ show: false, message: '', type: '' });
 
   const carouselImages = [
-    { src: man, title: "What men need" },
-    { src: woman, title: "Women's fashion" },
-    { src: kids, title: "Kids' collection" },
-    { src: plants, title: "Home & garden" }
+    { src: "../src/assets/categories/man.jpg", title: "What men need" },
+    { src: "../src/assets/categories/woman.jpg", title: "Women's fashion" },
+    { src: "../src/assets/categories/kids.jpg", title: "Kids' collection" },
+    { src: "../src/assets/categories/plants.jpg", title: "Home & garden" }
   ];
 
   const nextImage = useCallback(() => {
@@ -38,43 +39,43 @@ const Home = () => {
     );
   }, [carouselImages.length]);
 
-  // Auto-scroll effect
   useEffect(() => {
-    const timer = setInterval(() => {
-      nextImage();
-    }, 5000); // Change image every 5 seconds
-
-    return () => clearInterval(timer); // Cleanup on component unmount
+    const timer = setInterval(nextImage, 5000);
+    return () => clearInterval(timer);
   }, [nextImage]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const data = await getAllProducts();
-        const categoriesData = await getCategories()
-        setCategories(categoriesData)
-        console.log(categories)
-        setProducts(data);
+        const [productsData, categoriesData, trendingData, featuredData] = await Promise.all([
+          getAllProducts(),
+          getCategories(),
+          getTrendingProducts(),
+          getFeaturedProducts()
+        ]);
+
+        setProducts(productsData);
+        setCategories(categoriesData);
+        setTrendingProducts(trendingData);
+        setFeaturedProducts(featuredData);
+        await fetchCartItems(productsData);
       } catch (err) {
-        console.log('error loading products ', err);
+        console.error('Error loading data:', err);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
 
-
-    fetchProducts();
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    if (products.length > 0) {
-      fetchCartItems();
-    }
-  }, [products]);
-
-  const fetchCartItems = async () => {
+  const fetchCartItems = async (productsData) => {
     try {
       const data = await CartAPI.getCart();
       const cartItems = data.map(cartItem => {
-        const product = products.find(prod => prod.id === cartItem.product);
+        const product = productsData.find(prod => prod.id === cartItem.product);
         return {
           ...product,
           cart_id: cartItem.id,
@@ -83,7 +84,7 @@ const Home = () => {
       });
       setCart(cartItems);
     } catch (err) {
-      console.log('Error loading cart items:', err);
+      console.error('Error loading cart items:', err);
     }
   };
 
@@ -92,58 +93,161 @@ const Home = () => {
       const cartItems = await CartAPI.getCart();
       const productExists = cartItems.some(item => item.product === productId);
       if (productExists) {
-        console.log('product already in cart');
+        showAlert('Product is already in your cart.', 'info');
       } else {
         await CartAPI.addItem(productId, quantity);
-        fetchCartItems();
-        console.log('product added to cart');
+        fetchCartItems(products);
+        showAlert('Product added to cart successfully!', 'success');
       }
     } catch (error) {
-      console.log('error while adding item to cart', error);
+      console.error('Error while adding item to cart', error);
+      showAlert('Failed to add product to cart. Please try again.', 'error');
     }
   };
 
-
-  const handleCategoryClick = (categoryId) => {
-    // Handle the category click here, e.g., navigate to the category page
-    console.log(`Clicked category with id: ${categoryId}`);
-    // Implement your navigation logic here
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    // Implement newsletter subscription logic here
+    showAlert('Thank you for subscribing to our newsletter!', 'success');
+    setEmail('');
   };
 
-  return (
-    <>
-      <Navbar />
+  const showAlert = (message, type) => {
+    setAlert({ show: true, message, type });
+    setTimeout(() => setAlert({ show: false, message: '', type: '' }), 5000);
+  };
 
-      <div className="min-h-screen flex flex-col">
-        {/* Carousel Section */}
-        <div className="relative h-[50vh] bg-gray-900 overflow-hidden">
-          {carouselImages.map((image, index) => (
-            <div 
-              key={index}
-              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{backgroundImage: `url(${image.src})`}}
-            />
-          ))}
-          <div className="absolute inset-0 bg-black bg-opacity-40" />
-          <div className="absolute inset-0 flex items-center justify-between p-4">
-            <ChevronLeft onClick={prevImage} className="text-white cursor-pointer z-10" size={40} />
-            <ChevronRight onClick={nextImage} className="text-white cursor-pointer z-10" size={40} />
-          </div>
-          <div className="absolute bottom-0 left-0 p-5 text-white z-10">
-            <p className="text-blue-300 font-extralight text-5xl">All-new</p>
-            <h1 className="text-7xl">{carouselImages[currentImageIndex].title}</h1>
-          </div>
+  if (loading) return (
+    <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+  
+  if (error) return <div className="text-red-500 text-center p-4">{error}</div>;
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Navbar />
+      
+      {alert.show && (
+        <div className={`fixed top-20 right-4 z-50 p-4 rounded-md shadow-lg ${
+          alert.type === 'error' ? 'bg-red-100 text-red-700' :
+          alert.type === 'success' ? 'bg-green-100 text-green-700' :
+          'bg-blue-100 text-blue-700'
+        }`}>
+          {alert.message}
+        </div>
+      )}
+
+      {/* Carousel Section */}
+      <div className="relative h-[70vh] bg-gray-900 overflow-hidden">
+        {carouselImages.map((image, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{ backgroundImage: `url(${image.src})` }}
+          />
+        ))}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+
+        <div className="absolute inset-0 flex items-center justify-between p-4">
+          <ChevronLeft onClick={prevImage} className="text-white cursor-pointer z-10 hover:bg-black hover:bg-opacity-20 rounded-full p-2 transition duration-300" size={40} />
+          <ChevronRight onClick={nextImage} className="text-white cursor-pointer z-10 hover:bg-black hover:bg-opacity-20 rounded-full p-2 transition duration-300" size={40} />
         </div>
 
 
-      <div className="container mx-auto p-4">
+        <div className="relative mt-20 mb-16 w-full">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold mb-8 text-white text-center">Shop by Category</h2>
             <CategoryCards categories={categories} />
+          </div>
+        </div>
       </div>
 
+      {/* Trending Products Section */}
+      <div className="container mx-auto p-8">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">Trending Products</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <ProductCard 
+            products={trendingProducts} 
+            addToCart={addToCart}
+          />
+        </div>
       </div>
-    </>
+
+      {/* Featured Products Section */}
+      <div className="bg-gray-900 py-12">
+        <div className="container mx-auto px-8">
+          <h2 className="text-3xl text-white font-bold mb-6">Featured Products</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <ProductCard 
+              key={featuredProducts.id} 
+              products={featuredProducts} 
+              addToCart={addToCart}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Special Offers Section */}
+      <div className="bg-white py-12">
+        <div className="container mx-auto px-8">
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">Special Offers</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-blue-50 p-6 rounded-lg shadow-md flex items-center">
+              <Tag className="text-blue-500 mr-4" size={24} />
+              <span className="text-gray-800">Up to 50% off on Every holiday</span>
+            </div>
+            <div className="bg-green-50 p-6 rounded-lg shadow-md flex items-center">
+              <Truck className="text-green-500 mr-4" size={24} />
+              <span className="text-gray-800">Free shipping on orders over 500MRU</span>
+            </div>
+            <div className="bg-yellow-50 p-6 rounded-lg shadow-md flex items-center">
+              <Star className="text-yellow-500 mr-4" size={24} />
+              <span className="text-gray-800">New arrivals every week</span>
+            </div>
+            <div className="bg-red-50 p-6 rounded-lg shadow-md flex items-center">
+              <TrendingUp className="text-red-500 mr-4" size={24} />
+              <span className="text-gray-800">Trending products</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer className="bg-gray-800 text-white py-8">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">About Us</h3>
+              <p>We are dedicated to providing the best shopping experience for our customers.</p>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-4">Quick Links</h3>
+              <ul>
+                <li><Link to="/products" className="hover:text-blue-400">Products</Link></li>
+                <li><Link to="/about" className="hover:text-blue-400">About</Link></li>
+                <li><Link to="/contact" className="hover:text-blue-400">Contact</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-4">Follow Us</h3>
+              <div className="flex space-x-4">
+                <a href="#" className="hover:text-blue-400"><i className="fab fa-facebook"></i></a>
+                <a href="#" className="hover:text-blue-400"><i className="fab fa-twitter"></i></a>
+                <a href="#" className="hover:text-blue-400"><i className="fab fa-instagram"></i></a>
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 text-center">
+            <p>&copy; 2024 esm lboutig. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+    </div>
   );
 }
 

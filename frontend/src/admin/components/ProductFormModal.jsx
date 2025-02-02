@@ -6,7 +6,7 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, initialData = null, cate
     name: '',
     price: '',
     description: '',
-    image: null,
+    images: [],
     category_id: '',
     count_in_stock: '',
   });
@@ -17,7 +17,7 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, initialData = null, cate
     if (initialData) {
       setFormData({
         ...initialData,
-        image: null, // Reset image to null as we can't pre-fill file inputs
+        images: [], // Reset images to empty array as we can't pre-fill file inputs
       });
     } else {
       // Reset form when adding a new product
@@ -25,7 +25,7 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, initialData = null, cate
         name: '',
         price: '',
         description: '',
-        image: null,
+        images: [],
         category_id: '',
         count_in_stock: '',
       });
@@ -35,8 +35,8 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, initialData = null, cate
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     
-    if (name === 'image' && files && files.length > 0) {
-      setFormData(prevData => ({ ...prevData, [name]: files[0] }));
+    if (name === 'images' && files) {
+      setFormData(prevData => ({ ...prevData, [name]: Array.from(files) }));
     } else if (['price', 'count_in_stock'].includes(name)) {
       setFormData(prevData => ({ ...prevData, [name]: parseFloat(value) }));
     } else {
@@ -51,10 +51,10 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, initialData = null, cate
   
     const formDataToSend = new FormData();
     for (const key in formData) {
-      if (key === 'image') {
-        if (formData[key] instanceof File) {
-          formDataToSend.append(key, formData[key]);
-        }
+      if (key === 'images') {
+        formData[key].forEach((image, index) => {
+          formDataToSend.append('images', image);
+        });
       } else {
         formDataToSend.append(key, formData[key]);
       }
@@ -156,14 +156,15 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, initialData = null, cate
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="image" className="block mb-2 text-sm font-medium text-gray-700">Image</label>
+            <label htmlFor="images" className="block mb-2 text-sm font-medium text-gray-700">Images</label>
             <input
               type="file"
-              id="image"
-              name="image"
+              id="images"
+              name="images"
               onChange={handleChange}
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full"
               accept="image/*"
+              multiple
             />
           </div>
           <div className="flex items-center justify-end p-6 border-t border-gray-200 rounded-b">

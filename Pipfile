@@ -13,6 +13,7 @@ django-allauth = "*"
 dj-rest-auth = "*"
 django-cors-headers = "*"
 django-oauth-toolkit = "*"
+requests = "*"
 
 [dev-packages]
 

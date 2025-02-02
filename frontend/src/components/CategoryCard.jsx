@@ -16,7 +16,7 @@ const CategoryCard = ({ category }) => {
     <Link 
       to="/products"
       state={{ categoryId: category.id, categoryName: category.name }}
-      className="block bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden text-white"
+      className="block bg-gradient-to-br bg-gray-50 text-black rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
     >
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-4">{category.name}</h2>
@@ -32,7 +32,7 @@ const CategoryCard = ({ category }) => {
             <img
               key={product.id}
               className="w-full h-full object-cover rounded-lg shadow-md transform transition-transform duration-300 hover:scale-105"
-              src={product.image}
+              src={product.images[0].image}
               alt={`${product.name}`}
               style={{ gridArea: 'abcd'[index] }}
             />

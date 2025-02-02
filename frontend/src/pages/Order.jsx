@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import {getAllProducts} from '../services/productApi'
 import { CartAPI } from "../services/cartApi";
 import Stepper from '../components/Stepper';
-
+import { OrderAPI } from "../services/orderApi";
+import OrderCard from '../components/OrderCard'
 export default function Order() {
   
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -25,7 +27,19 @@ export default function Order() {
     if (products.length > 0) {
       fetchCartItems();
     }
+    fetchOrders()
   }, [products]);
+
+  const fetchOrders = async () => {
+    try {
+      const data = await OrderAPI.getOrders()
+      console.log(data)
+      setOrders(data)
+
+    }catch(err){
+      console.log('error while fetching orders',err)
+    }
+  }
 
   const fetchCartItems = async () => {
     try {
@@ -47,7 +61,7 @@ export default function Order() {
   return (
     <>
       <Navbar/>
-      <Stepper />
+      <OrderCard orders={orders}/>
     </>
   );
 }

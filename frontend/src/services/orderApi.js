@@ -11,7 +11,7 @@ const api = axios.create({
 // Add a request interceptor to include the token in all requests
 api.interceptors.request.use(
   (config) => {
-    const token =  JSON.parse(localStorage.getItem('authTokens'));
+    const token = JSON.parse(localStorage.getItem('authTokens'));
     if (token) {
       config.headers['Authorization'] = `Bearer ${token.access}`;
     }
@@ -23,7 +23,6 @@ api.interceptors.request.use(
 );
 
 export const OrderAPI = {
-
   getOrders: async () => {
     try {
       const response = await api.get('/orders/');
@@ -44,11 +43,25 @@ export const OrderAPI = {
     }
   },
 
-  addOrder: async () => {
+  addOrder: async (orderData) => {
     try {
-      const response = await api.post('/orders/');
+      const response = await api.post('/orders/', {
+        shipping_address: orderData.shipping_address,
+        notes: orderData.notes || '',
+        status: 'Pending', // Default status
+        // Add any other required fields from your Order model
+      });
       return response.data;
     } catch (error) {
+      if (error.response) {
+        // The server responded with a status code outside the 2xx range
+        console.error('Error response:', error.response.data);
+        throw new Error(
+          error.response.data.detail || 
+          error.response.data.error || 
+          'Failed to create order'
+        );
+      }
       console.error('Error while confirming the order: ', error);
       throw error;
     }
@@ -59,6 +72,13 @@ export const OrderAPI = {
       const response = await api.patch(`/orders/${orderId}/update-status/`, data);
       return response.data;
     } catch (error) {
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        throw new Error(
+          error.response.data.error || 
+          'Failed to update order status'
+        );
+      }
       console.error('Error updating order status:', error);
       throw error;
     }
@@ -66,12 +86,18 @@ export const OrderAPI = {
 
   getDeliveryInfo: async (userId) => {
     try {
-        const response = await api.get(`/adress/user/${userId}/`); // Adjusted to match the new endpoint
-        return response.data;
+      const response = await api.get(`/adress/user/${userId}/`);
+      return response.data;
     } catch (error) {
-        console.error('Error fetching delivery info:', error);
-        throw error;
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        throw new Error(
+          error.response.data.error || 
+          'Failed to fetch delivery info'
+        );
+      }
+      console.error('Error fetching delivery info:', error);
+      throw error;
     }
-},
-
+  },
 };

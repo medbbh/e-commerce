@@ -73,7 +73,7 @@ export default function CartDrawer({ showDrawer, setShowDrawer, cartItems, delet
                         <div key={item.id} className="border rounded-lg p-3 mb-4 shadow-sm">
                           <div className="flex items-center space-x-3">
                             <img
-                              src={item.image}
+                              src={item.images[0].image}
                               alt={item.name}
                               className="w-20 h-20 object-cover rounded"
                             />
@@ -121,7 +121,7 @@ export default function CartDrawer({ showDrawer, setShowDrawer, cartItems, delet
                       <p className="text-center text-sm text-gray-600 mb-3">
                         Shipping and taxes calculated at checkout
                       </p>
-                      <Link to="orders" className="block w-full text-center bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
+                      <Link to="/pass-orders" className="block w-full text-center bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
                         Checkout
                       </Link>
 

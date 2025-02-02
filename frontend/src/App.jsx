@@ -12,9 +12,15 @@ import AdminProducts from './admin/pages/Products';
 import AdminCategories from './admin/pages/Categories';
 import Orders from './admin/pages/Orders';
 import Users from './admin/pages/Users';
+import ProductDetail from './components/ProductDetail';
+import PassOrder from './pages/PassOrder'
+import { MantineProvider } from '@mantine/core';
+
 
 function App() {
   return (
+    <MantineProvider withGlobalStyles withNormalizeCSS>
+
     <Router>
       <AuthProvider>
         <Routes>
@@ -23,6 +29,10 @@ function App() {
 
           {/* client side */}
           <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+
+          
           <Route
             path="/orders"
             element={
@@ -32,6 +42,14 @@ function App() {
             }
           />
           <Route
+            path="/pass-orders"
+            element={
+              <ClientPrivateRoute>
+                <PassOrder />
+              </ClientPrivateRoute>
+            }
+          />
+          {/* <Route
             path="/products"
             element={
               <ClientPrivateRoute>
@@ -39,6 +57,14 @@ function App() {
               </ClientPrivateRoute>
             }
           />  
+
+          <Route path="/product/:id" element={
+              <ClientPrivateRoute>
+                <ProductDetail />
+              </ClientPrivateRoute>
+
+            } /> */}
+
 
           {/* admin side */}
           <Route
@@ -58,6 +84,9 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+
+    </MantineProvider>
+
   );
 }
 
