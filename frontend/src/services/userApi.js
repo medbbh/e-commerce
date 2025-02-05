@@ -26,7 +26,7 @@ export const UserAPI = {
   // Get all users
   getUsers: async () => {
     try {
-      const response = await api.get('/auth/users/');
+      const response = await api.get('/auth/admin-users/');
       return response.data;
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -48,7 +48,7 @@ export const UserAPI = {
   // Update user role
   updateUserRole: async (userId, newRole) => {
     try {
-      const response = await api.patch(`/auth/users/${userId}/`, {
+      const response = await api.patch(`/auth/admin-users/${userId}/update-role/`, {
         role: newRole
       });
       return response.data;

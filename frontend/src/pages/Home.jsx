@@ -7,6 +7,8 @@ import CategoryCards from "../components/CategoryCard";
 import { getAllProducts, getTrendingProducts, getFeaturedProducts } from '../services/productApi';
 import { CartAPI } from "../services/cartApi";
 import { getCategories } from "../services/categoryApi";
+import { useCart } from "../context/CartContext";
+import Spinner from "../components/Spinner";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -19,6 +21,7 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [email, setEmail] = useState('');
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
+  const { addToCart } = useCart(); // Get addToCart function from context
 
   const carouselImages = [
     { src: "../src/assets/categories/man.jpg", title: "What men need" },
@@ -88,22 +91,22 @@ const Home = () => {
     }
   };
 
-  const addToCart = async (productId, quantity) => {
-    try {
-      const cartItems = await CartAPI.getCart();
-      const productExists = cartItems.some(item => item.product === productId);
-      if (productExists) {
-        showAlert('Product is already in your cart.', 'info');
-      } else {
-        await CartAPI.addItem(productId, quantity);
-        fetchCartItems(products);
-        showAlert('Product added to cart successfully!', 'success');
-      }
-    } catch (error) {
-      console.error('Error while adding item to cart', error);
-      showAlert('Failed to add product to cart. Please try again.', 'error');
-    }
-  };
+  // const addToCart = async (productId, quantity) => {
+  //   try {
+  //     const cartItems = await CartAPI.getCart();
+  //     const productExists = cartItems.some(item => item.product === productId);
+  //     if (productExists) {
+  //       showAlert('Product is already in your cart.', 'info');
+  //     } else {
+  //       await CartAPI.addItem(productId, quantity);
+  //       fetchCartItems(products);
+  //       showAlert('Product added to cart successfully!', 'success');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error while adding item to cart', error);
+  //     showAlert('Failed to add product to cart. Please try again.', 'error');
+  //   }
+  // };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -118,9 +121,7 @@ const Home = () => {
   };
 
   if (loading) return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
+    <Spinner/>
   );
   
   if (error) return <div className="text-red-500 text-center p-4">{error}</div>;
@@ -140,7 +141,7 @@ const Home = () => {
       )}
 
       {/* Carousel Section */}
-      <div className="relative h-[70vh] bg-gray-900 overflow-hidden">
+      <div className="relative h-[100vh] bg-gray-900 overflow-hidden">
         {carouselImages.map((image, index) => (
           <div
             key={index}
@@ -161,7 +162,7 @@ const Home = () => {
 
         <div className="relative mt-20 mb-16 w-full">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8 text-white text-center">Shop by Category</h2>
+            <h2 className="text-5xl font-bold mb-8 text-gray-50 text-center">Shop by Category</h2>
             <CategoryCards categories={categories} />
           </div>
         </div>

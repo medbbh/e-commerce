@@ -127,11 +127,16 @@ export const deleteProduct = async (id) => {
 };
 
 
+
 // review 
 
-export const getRatings = async () => {
+
+export const getRatings = async (productId) => {
+  if (!productId) {
+    throw new Error("ProductId is required to fetch reviews.");
+  }
   try {
-    const response = await api.get('/products/rating/');
+    const response = await api.get(`/products/rating/?product_id=${productId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching ratings', error);

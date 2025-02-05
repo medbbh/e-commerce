@@ -1,45 +1,49 @@
-import Navbar from "../components/Navbar";
 import { useEffect, useState } from "react";
-import {getAllProducts} from '../services/productApi'
-import { CartAPI } from "../services/cartApi";
+import Navbar from "../components/Navbar";
 import Stepper from '../components/Stepper';
+import OrderCard from '../components/OrderCard';
+
+import { getAllProducts } from '../services/productApi';
+import { CartAPI } from "../services/cartApi";
 import { OrderAPI } from "../services/orderApi";
-import OrderCard from '../components/OrderCard'
+
+// ✅ Import the Spinner
+import Spinner from "../components/Spinner";
+
 export default function Order() {
-  
+  const [isLoading, setIsLoading] = useState(false); // ✅ For showing spinner
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [cart, setCart] = useState([]);             // ✅ Missing cart state
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    // ✅ Fetch products & orders in parallel, then fetch cart items if products exist
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const data = await getAllProducts();
-        setProducts(data);
+        // Fetch products & orders simultaneously
+        const [fetchedProducts, fetchedOrders] = await Promise.all([
+          getAllProducts(),
+          OrderAPI.getOrders(),
+        ]);
+
+        setProducts(fetchedProducts);
+        setOrders(fetchedOrders);
       } catch (err) {
-        console.log('error loading products ', err);
+        console.log('❌ Error loading products or orders:', err);
       }
+      setIsLoading(false);
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
+  // Once products are loaded, fetch the cart (which depends on product data)
   useEffect(() => {
     if (products.length > 0) {
       fetchCartItems();
     }
-    fetchOrders()
   }, [products]);
-
-  const fetchOrders = async () => {
-    try {
-      const data = await OrderAPI.getOrders()
-      console.log(data)
-      setOrders(data)
-
-    }catch(err){
-      console.log('error while fetching orders',err)
-    }
-  }
 
   const fetchCartItems = async () => {
     try {
@@ -54,14 +58,24 @@ export default function Order() {
       });
       setCart(cartItems);
     } catch (err) {
-      console.log('Error loading cart items:', err);
+      console.log('❌ Error loading cart items:', err);
     }
   };
 
+  // ✅ If still loading, show spinner
+  if (isLoading) {
+    return (
+      <>
+        <Navbar />
+        <Spinner />
+      </>
+    );
+  }
+
   return (
     <>
-      <Navbar/>
-      <OrderCard orders={orders}/>
+      <Navbar />
+      <OrderCard orders={orders} />
     </>
   );
 }

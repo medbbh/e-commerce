@@ -76,6 +76,42 @@ class RatingtViewSet(viewsets.ModelViewSet):
     queryset = Rating.objects.all().order_by('-created_at')
     serializer_class = RatingSerializer
 
+    def get_queryset(self):
+        """Filter ratings by product if product_id is passed in query params."""
+        product_id = self.request.query_params.get('product_id')
+        if product_id:
+            return Rating.objects.filter(product_id=product_id)
+        return Rating.objects.all()
+
     def perform_create(self, serializer):
+        # ✅ Set the user to the currently logged-in user
         serializer.save(user=self.request.user)
 
+    # (Optional) If you want to enforce only one review per user per product:
+    def create(self, request, *args, **kwargs):
+        product_id = request.data.get("product")
+        existing_rating = Rating.objects.filter(user=request.user, product_id=product_id).first()
+        if existing_rating:
+            raise serializers.ValidationError("You have already rated this product.")
+        return super().create(request, *args, **kwargs)
+
+        # Check if user has already reviewed this product
+        existing_rating = Rating.objects.filter(user=user, product_id=product_id).first()
+        if existing_rating:
+            return Response(
+                {"error": "You have already rated this product."},
+                status=400
+            )
+
+        return super().create(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Allow users to delete only their own reviews."""
+        instance = self.get_object()
+        if instance.user != request.user:
+            return Response(
+                {"error": "You can only delete your own reviews."},
+                status=403
+            )
+        self.perform_destroy(instance)
+        return Response({"message": "Review deleted successfully."}, status=204)

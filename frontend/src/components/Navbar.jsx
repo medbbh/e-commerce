@@ -5,6 +5,7 @@ import { getAllProducts } from '../services/productApi';
 import { CartAPI } from "../services/cartApi";
 import AuthContext from '../context/AuthContext';
 import { Home, ShoppingCart, Package, Grid, User, LogOut, Menu, X } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 export default function Navbar() {
   const { user, loginUser, logoutUser } = useContext(AuthContext);
@@ -12,7 +13,7 @@ export default function Navbar() {
   const location = useLocation();
   const [showDrawer, setShowDrawer] = useState(false);
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
+  // const [cart, setCart] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -22,6 +23,8 @@ export default function Navbar() {
     password: '',
     confirmPassword: '',
   });
+
+  const { cart, deleteItem, updateItemQuantity } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -82,27 +85,27 @@ export default function Navbar() {
     }
   };
 
-  const deleteItem = async (cartId) => {
-    try {
-      await CartAPI.removeItem(cartId);
-      fetchCartItems();
-    } catch (err) {
-      console.log('error while deleting item from cart', err);
-    }
-  };
+  // const deleteItem = async (cartId) => {
+  //   try {
+  //     await CartAPI.removeItem(cartId);
+  //     fetchCartItems();
+  //   } catch (err) {
+  //     console.log('error while deleting item from cart', err);
+  //   }
+  // };
 
-  const updateItemQuantity = async (cartId, newQuantity) => {
-    try {
-      await CartAPI.updateItemQuantity(cartId, newQuantity);
-      setCart((prevItems) =>
-        prevItems.map((item) =>
-          item.cart_id === cartId ? { ...item, quantity: newQuantity } : item
-        )
-      );
-    } catch (err) {
-      console.log('error while updating cart quantity', err);
-    }
-  };
+  // const updateItemQuantity = async (cartId, newQuantity) => {
+  //   try {
+  //     await CartAPI.updateItemQuantity(cartId, newQuantity);
+  //     setCart((prevItems) =>
+  //       prevItems.map((item) =>
+  //         item.cart_id === cartId ? { ...item, quantity: newQuantity } : item
+  //       )
+  //     );
+  //   } catch (err) {
+  //     console.log('error while updating cart quantity', err);
+  //   }
+  // };
 
   const handleLogout = () => {
     logoutUser();
@@ -150,6 +153,7 @@ export default function Navbar() {
         showDrawer={showDrawer}
         setShowDrawer={setShowDrawer}
         cartItems={cart}
+        
         deleteItem={deleteItem}
         updateItemQuantity={updateItemQuantity}
       />

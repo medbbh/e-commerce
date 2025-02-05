@@ -1,17 +1,17 @@
-// apiService.js
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = "http://localhost:8000/api"; // ✅ Backend URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// ✅ Add Authorization Header
 api.interceptors.request.use(
   (config) => {
-    const token = JSON.parse(localStorage.getItem('authTokens'));
+    const token = JSON.parse(localStorage.getItem("authTokens"));
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token.access}`;
+      config.headers["Authorization"] = `Bearer ${token.access}`;
     }
     return config;
   },
@@ -20,14 +20,20 @@ api.interceptors.request.use(
   }
 );
 
+// ✅ Fetch addresses for the logged-in user
 export const fetchAddress = async () => {
-  return await api.get('/adress/');
+  return await api.get("/address/");  // ✅ Fixed endpoint spelling
 };
 
+// ✅ Create a new address
 export const createAddress = async (addressInfo) => {
-  return await api.post('/adress/', addressInfo);
+  return await api.post("/address/", addressInfo);
 };
 
-export const updateAddress = async (addressInfo,id) => {
-  return await api.put(`/adress/${id}/`, addressInfo);
+// ✅ Update an existing address
+export const updateAddress = async (addressInfo, id) => {
+  if (!id) {
+    throw new Error("Address ID is required for updating an address");
+  }
+  return await api.put(`/address/${id}/`, addressInfo);
 };

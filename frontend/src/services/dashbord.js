@@ -8,12 +8,12 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Add a request interceptor to include the token in all requests
+// Attach the access token from localStorage on every request
 api.interceptors.request.use(
   (config) => {
-    const token = JSON.parse(localStorage.getItem('authTokens')); // Assuming authTokens is stored in localStorage
+    const token = JSON.parse(localStorage.getItem('authTokens'));
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token.access}`; // Add the access token to the Authorization header
+      config.headers['Authorization'] = `Bearer ${token.access}`;
     }
     return config;
   },
@@ -22,8 +22,8 @@ api.interceptors.request.use(
   }
 );
 
-export const apiService = {
-  // Sales Trends API (Line chart data for sales trends)
+export const dashboardService = {
+  // 1️⃣ Sales Trends (Line Chart Data)
   getSalesTrends: async () => {
     try {
       const response = await api.get('/dashboard/sales-trends/');
@@ -34,7 +34,7 @@ export const apiService = {
     }
   },
 
-  // Top Products API (Get top ordered products)
+  // 2️⃣ Top Products (Table Data)
   getTopProducts: async () => {
     try {
       const response = await api.get('/dashboard/top-products/');
@@ -45,18 +45,18 @@ export const apiService = {
     }
   },
 
-  // Marketing Effectiveness API (Get today's visitor count)
-  getMarketingEffectiveness: async () => {
+  // 3️⃣ Order Status Distribution (Pie Chart)
+  getOrderStatusDistribution: async () => {
     try {
-      const response = await api.get('/dashboard/marketing-effectiveness/');
+      const response = await api.get('/dashboard/order-status-distribution/');
       return response.data;
     } catch (error) {
-      console.error('Error fetching marketing effectiveness:', error);
+      console.error('Error fetching order status distribution:', error);
       throw error;
     }
   },
 
-  // Recent Orders API (Get the most recent orders)
+  // 4️⃣ Recent Orders (Table Data)
   getRecentOrders: async () => {
     try {
       const response = await api.get('/dashboard/recent-orders/');

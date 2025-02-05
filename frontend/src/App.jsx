@@ -15,6 +15,8 @@ import Users from './admin/pages/Users';
 import ProductDetail from './components/ProductDetail';
 import PassOrder from './pages/PassOrder'
 import { MantineProvider } from '@mantine/core';
+import { CartProvider } from './context/CartContext';
+import AlertComponent from './components/Alert';
 
 
 function App() {
@@ -23,6 +25,8 @@ function App() {
 
     <Router>
       <AuthProvider>
+        <CartProvider>
+        <AlertComponent />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -82,6 +86,7 @@ function App() {
             <Route path="users" element={<Users />} />
           </Route>
         </Routes>
+        </CartProvider>
       </AuthProvider>
     </Router>
 

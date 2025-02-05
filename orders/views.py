@@ -4,6 +4,8 @@ from rest_framework import viewsets, status,serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from deliveryinfo.models import DeliveryInfo
 from .models import Order, OrderItem
 from carts.models import ShoppingCart
 from products.models import Product
@@ -24,56 +26,88 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @transaction.atomic
+    # def perform_create(self, serializer):
+    #     try:
+    #         cart = ShoppingCart.objects.get(customer=self.request.user)
+    #         cart_items = cart.items.all()
+
+    #         # First validate all products have sufficient quantity
+    #         for item in cart_items:
+    #             if item.product.quantity < item.quantity:
+    #                 raise serializers.ValidationError(
+    #                     f"Insufficient stock for {item.product.name}. Available: {item.product.quantity}"
+    #                 )
+
+    #         order = serializer.save(customer=self.request.user)
+    #         total_price = 0
+
+    #         # Process each cart item and update product quantities
+    #         for item in cart_items:
+    #             # Create order item
+    #             order_item = OrderItem.objects.create(
+    #                 order=order,
+    #                 product=item.product,
+    #                 quantity=item.quantity,
+    #                 price=item.get_total_price()
+    #             )
+    #             total_price += order_item.price
+
+    #             # Update product quantity
+    #             product = item.product
+    #             product.quantity -= item.quantity
+    #             product.save()
+
+    #         # Update order total and clear cart
+    #         order.total_price = total_price
+    #         order.save()
+    #         cart.items.all().delete()
+
+        
+    #         # Update Sales Data on Order Completion
+    #         # for item in order.items.all():
+    #         #     ProductSaleHistory.objects.create(
+    #         #         product=item.product,
+    #         #         sold_quantity=item.quantity
+    #         #     )
+
+    @transaction.atomic
     def perform_create(self, serializer):
         try:
             cart = ShoppingCart.objects.get(customer=self.request.user)
             cart_items = cart.items.all()
 
-            # First validate all products have sufficient quantity
-            for item in cart_items:
-                if item.product.quantity < item.quantity:
-                    raise serializers.ValidationError(
-                        f"Insufficient stock for {item.product.name}. Available: {item.product.quantity}"
-                    )
+            if not cart_items:
+                raise serializers.ValidationError("Your cart is empty.")
 
+            # ✅ Ensure delivery info exists for this user
+            delivery_info = DeliveryInfo.objects.filter(customer=self.request.user).first()
+            if not delivery_info:
+                raise serializers.ValidationError("❌ You must add delivery information before placing an order.")
+
+            # ✅ Create the order
             order = serializer.save(customer=self.request.user)
             total_price = 0
 
-            # Process each cart item and update product quantities
+            # ✅ Process each cart item
             for item in cart_items:
-                # Create order item
-                order_item = OrderItem.objects.create(
+                OrderItem.objects.create(
                     order=order,
                     product=item.product,
                     quantity=item.quantity,
-                    price=item.get_total_price()
+                    price=item.product.price,
                 )
-                total_price += order_item.price
+                total_price += item.product.price * item.quantity
 
-                # Update product quantity
-                product = item.product
-                product.quantity -= item.quantity
-                product.save()
-
-            # Update order total and clear cart
+            # ✅ Update order total price & clear cart
             order.total_price = total_price
             order.save()
             cart.items.all().delete()
 
-        
-            # Update Sales Data on Order Completion
-            for item in order.items.all():
-                ProductSaleHistory.objects.create(
-                    product=item.product,
-                    sold_quantity=item.quantity
-                )
-
         except ShoppingCart.DoesNotExist:
-            raise serializers.ValidationError("Shopping cart not found")
-        except Product.DoesNotExist:
-            raise serializers.ValidationError("One or more products not found")
+            raise serializers.ValidationError("Shopping cart not found.")
         except Exception as e:
             raise serializers.ValidationError(f"Error processing order: {str(e)}")
+
 
     @action(detail=True, methods=['patch'], url_path='update-status')
     def update_order_status(self, request, pk=None):

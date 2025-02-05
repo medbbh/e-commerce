@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from users.serializers import UserSerializer
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,7 +27,9 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id','name','products']
 
 class RatingSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(default=serializers.CurrentUserDefault(), read_only=True)
+    # user = serializers.StringRelatedField(default=serializers.CurrentUserDefault(), read_only=True)
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Rating
         fields = '__all__'
