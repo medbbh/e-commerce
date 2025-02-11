@@ -9,6 +9,7 @@ import { CartAPI } from "../services/cartApi";
 import { getCategories } from "../services/categoryApi";
 import { useCart } from "../context/CartContext";
 import Spinner from "../components/Spinner";
+import MobileCategoryCards from "../components/MobileCategoryCards";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -155,18 +156,22 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
 
         <div className="absolute inset-0 flex items-center justify-between p-4">
-          <ChevronLeft onClick={prevImage} className="text-white cursor-pointer z-10 hover:bg-black hover:bg-opacity-20 rounded-full p-2 transition duration-300" size={40} />
-          <ChevronRight onClick={nextImage} className="text-white cursor-pointer z-10 hover:bg-black hover:bg-opacity-20 rounded-full p-2 transition duration-300" size={40} />
+          <ChevronLeft onClick={prevImage} className="text-white hidden md:block cursor-pointer z-10 hover:bg-black hover:bg-opacity-20 rounded-full p-2 transition duration-300" size={40} />
+          <ChevronRight onClick={nextImage} className="text-white hidden md:block cursor-pointer z-10 hover:bg-black hover:bg-opacity-20 rounded-full p-2 transition duration-300" size={40} />
         </div>
 
 
         <div className="relative mt-20 mb-16 w-full">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 hidden md:block">
             <h2 className="text-5xl font-bold mb-8 text-gray-50 text-center">Shop by Category</h2>
             <CategoryCards categories={categories} />
           </div>
+                        {/* Mobile Category Section: Visible on mobile */}
+      <MobileCategoryCards categories={categories} />
         </div>
+
       </div>
+
 
       {/* Trending Products Section */}
       <div className="container mx-auto p-8">

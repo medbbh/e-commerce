@@ -1,224 +1,157 @@
 import React, { useState, useEffect } from "react";
-import { fetchAddress, createAddress, updateAddress } from "../services/adressApi"; // ✅ Ensure correct API import
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { MapPin, Navigation } from "lucide-react";
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-export default function AddressInfo({ setDeliveryInfo }) {
-  const [addressInfo, setAddressInfo] = useState({
-    phone: "",
-    wtsp: "",
-    city: "",
-    street: "",
-    current_location: "",
+// Import marker assets using ES module syntax:
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix for default marker icon using the imported assets:
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow
+});
+
+function LocationMarker({ onLocationSelect }) {
+  const [position, setPosition] = useState(null);
+  const map = useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+      onLocationSelect(e.latlng);
+      map.flyTo(e.latlng, map.getZoom());
+    }
   });
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isNewAddress, setIsNewAddress] = useState(false);
-  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
-  const [gpsLocation, setGpsLocation] = useState(null);
+  return position === null ? null : (
+    <Marker position={position} />
+  );
+}
 
-  useEffect(() => {
-    fetchAddressInfo();
-  }, []);
+export default function AddressInfo({ deliveryInfo, setDeliveryInfo, onError }) {
+  const [formData, setFormData] = useState({
+    phone: "",
+    city: "",
+    street: "",
+    wtsp: "",
+    current_location: "",
+  });
+  const [location, setLocation] = useState(null);
+  const [showMap, setShowMap] = useState(false);
 
-  const fetchAddressInfo = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetchAddress();  // ✅ Fetch stored address from backend
-      if (response.data.length > 0) {
-        const firstAddress = response.data[0];
-        setAddressInfo(firstAddress);
-        setIsNewAddress(false);
-        setDeliveryInfo(formatAddress(firstAddress)); // ✅ Pass address to Stepper
-      } else {
-        setAddressInfo({
-          phone: "",
-          wtsp: "",
-          city: "",
-          street: "",
-          current_location: "",
-        });
-        setIsNewAddress(true);
-      }
-      setError(null);
-    } catch (error) {
-      console.error("❌ Error fetching address info:", error);
-      setError("❌ Failed to fetch address information. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // ✅ Format address into a readable string
-  const formatAddress = (addr) => {
-    return [
-      addr.street || "",
-      addr.city || "",
-      addr.current_location || "",
-      `Phone: ${addr.phone || ""}`,
-      `WhatsApp: ${addr.wtsp || ""}`,
-    ]
-      .filter(Boolean)
-      .join(" | ");
-  };
-
-  // ✅ Get user's current location
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!formData.phone || !formData.city || !formData.street) {
+      onError("Please fill in all required fields");
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        const address = await getAddressFromCoords(latitude, longitude);
-
-        setGpsLocation({ latitude, longitude, address });
-
-        setAddressInfo((prev) => ({
-          ...prev,
-          current_location: address,
-        }));
-      },
-      (error) => {
-        console.error("❌ Error getting location:", error);
-        alert("❌ Failed to get location. Please enable location services.");
-      }
-    );
+    const updatedInfo = { 
+      ...formData, 
+      current_location: location 
+        ? `${location.lat}, ${location.lng}` 
+        : formData.current_location 
+    };
+    
+    setDeliveryInfo(updatedInfo);
   };
 
-  // ✅ Reverse Geocoding (Lat/Lng → Address)
-  const getAddressFromCoords = async (latitude, longitude) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+  const handleGetCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocation({ lat: latitude, lng: longitude });
+          setShowMap(true);
+        },
+        (error) => {
+          onError("Unable to retrieve location: " + error.message);
+        }
       );
-      const data = await response.json();
-      return data.display_name || `Lat: ${latitude}, Lng: ${longitude}`;
-    } catch (error) {
-      console.error("❌ Error getting address:", error);
-      return `Lat: ${latitude}, Lng: ${longitude}`;
+    } else {
+      onError("Geolocation is not supported by this browser");
     }
   };
-
-  // ✅ Save or Update Address
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setIsLoading(true);
-
-    try {
-      let response;
-      if (isNewAddress) {
-        response = await createAddress(addressInfo);
-      } else {
-        response = await updateAddress(addressInfo, addressInfo.id);
-      }
-
-      setAddressInfo(response.data);
-      setIsNewAddress(false);
-      setError(null);
-
-      setDeliveryInfo(formatAddress(response.data)); // ✅ Pass updated address to Stepper
-      console.log("✅ Address saved successfully:", response.data);
-    } catch (error) {
-      console.error("❌ Error saving address info:", error);
-      setError("❌ Failed to save address information. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setAddressInfo((prev) => ({ ...prev, [name]: value }));
-  };
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4">
-        {isNewAddress ? "Add New Address Information" : "Update Address Information"}
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-[#1f2937] flex items-center">
+        <MapPin className="mr-3 text-[#1f2937]" /> Delivery Information
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Phone Number */}
-        <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
-          <input
-            name="phone"
-            value={addressInfo.phone || ""}
-            onChange={handleChange}
-            placeholder="Phone"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
-            type="tel"
-          />
-        </div>
-
-        {/* Use Current Location */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="useCurrentLocation"
-            checked={useCurrentLocation}
-            onChange={(e) => {
-              setUseCurrentLocation(e.target.checked);
-              if (e.target.checked) {
-                getCurrentLocation();
-              } else {
-                setGpsLocation(null);
-                setAddressInfo((prev) => ({ ...prev, current_location: "" }));
-              }
-            }}
-            className="h-5 w-5 text-blue-600"
-          />
-          <label htmlFor="useCurrentLocation" className="text-sm font-medium text-gray-700">
-            Use Current Location
-          </label>
-        </div>
-
-        {/* City and Street Fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">City</label>
-            <input
-              name="city"
-              value={addressInfo.city || ""}
-              onChange={handleChange}
-              placeholder="City"
-              disabled={useCurrentLocation}
-              className="shadow border rounded w-full py-2 px-3 text-gray-700"
+      {showMap && (
+        <div className="h-96 w-full border-2 border-gray-200 rounded-lg overflow-hidden">
+          <MapContainer 
+            center={location || [0, 0]} 
+            zoom={13} 
+            style={{height: '100%', width: '100%'}}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">Street</label>
-            <input
-              name="street"
-              value={addressInfo.street || ""}
-              onChange={handleChange}
-              placeholder="Street"
-              disabled={useCurrentLocation}
-              className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            <LocationMarker 
+              onLocationSelect={(loc) => {
+                setFormData(prev => ({
+                  ...prev,
+                  current_location: `${loc.lat}, ${loc.lng}`
+                }));
+              }} 
             />
-          </div>
-        </div>
-
-        {/* GPS Map */}
-        {useCurrentLocation && gpsLocation && (
-          <MapContainer center={[gpsLocation.latitude, gpsLocation.longitude]} zoom={13} className="h-64 w-full rounded-lg">
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={[gpsLocation.latitude, gpsLocation.longitude]}>
-              <Popup>{gpsLocation.address}</Popup>
-            </Marker>
           </MapContainer>
-        )}
+        </div>
+      )}
 
-        <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded">
-          {isNewAddress ? "Add Address" : "Update Address"}
+      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+        <input
+          type="text"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          placeholder="Phone Number"
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1f2937]"
+          required
+        />
+        <input
+          type="text"
+          name="city"
+          value={formData.city}
+          onChange={handleChange}
+          placeholder="City"
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1f2937]"
+          required
+        />
+        <input
+          type="text"
+          name="street"
+          value={formData.street}
+          onChange={handleChange}
+          placeholder="Street Address"
+          className="col-span-2 w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1f2937]"
+          required
+        />
+        <div className="col-span-2 flex items-center space-x-4">
+          <button 
+            type="button"
+            onClick={handleGetCurrentLocation}
+            className="flex-grow bg-[#1f2937] text-white p-3 rounded-lg hover:bg-[#374151] transition flex items-center justify-center"
+          >
+            <Navigation className="mr-2" /> Get Current Location
+          </button>
+        </div>
+        <button 
+          type="submit" 
+          className="col-span-2 bg-[#1f2937] text-white p-3 rounded-lg hover:bg-[#374151] transition"
+        >
+          Save Delivery Information
         </button>
       </form>
     </div>

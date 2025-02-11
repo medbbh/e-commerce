@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'orders',
     'deliveryinfo',
     'dashboard',
+    'payments',
 ]
 
 MIDDLEWARE = [
@@ -194,3 +195,10 @@ SIMPLE_JWT = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+# I'll add this in .env later
+# settings.py
+STRIPE_SECRET_KEY = 'sk_test_51Qp735RbimPKQarVvNgtJZQmiPrN2oqiVBUKb2N2V62v2RMTW5zeIGn3SJ7Lk51X0gMSBtE0t6zb9KcqnaweQ9R600r9zPERUa'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_51Qp735RbimPKQarVU6rxF9vlfEQMjYrh6VH6lz2lSINwGLj3YmXTZOwayTJ02khFJBnS8S7OggPXVrWjEwfjhF5d00Tnebb75a'
+

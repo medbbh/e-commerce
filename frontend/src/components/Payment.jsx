@@ -1,82 +1,105 @@
-import { useCart } from "../context/CartContext";
+import React, { useEffect, useState } from 'react';
+import { CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
+import { PaymentAPI } from '../services/paymentApi';
+import { OrderAPI } from '../services/orderApi';
+import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
+import { useNavigate } from 'react-router-dom';
 
 export default function Payment() {
-  // Destructure cart and updateItemQuantity from context
-  const { cart, updateItemQuantity } = useCart();
+  const stripe = useStripe();
+  const elements = useElements();
+  const [clientSecret, setClientSecret] = useState(null);
+  const [paymentId, setPaymentId] = useState(null);
+  const [processing, setProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [succeeded, setSucceeded] = useState(false);
 
-  // Calculate the total price from the cart
-  const calculateTotalPrice = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
+  const navigate = useNavigate();
+   
+  useEffect(() => {
+    async function createIntent() {
+      try {
+        const res = await PaymentAPI.createPaymentIntent();
+        setClientSecret(res.data.clientSecret);
+        setPaymentId(res.data.paymentId);
+      } catch (error) {
+        setErrorMessage("Payment initialization failed");
+      }
+    }
+    createIntent();
+  }, []);
 
-  // Increase quantity by 1
-  const handleIncrease = (cartId, currentQty, countInStock = Infinity) => {
-    if (currentQty < countInStock) {
-      updateItemQuantity(cartId, currentQty + 1);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    
+    setProcessing(true);
+    const cardElement = elements.getElement(CardElement);
+    
+    const payload = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: { card: cardElement },
+    });
+    
+    if (payload.error) {
+      setErrorMessage(`Payment failed: ${payload.error.message}`);
+      setProcessing(false);
     } else {
-      alert("Cannot exceed stock limit!");
+      try {
+        await OrderAPI.finalizeOrder(paymentId);
+        setSucceeded(true);
+        navigate('/orders');
+      } catch (error) {
+        setErrorMessage("Order finalization failed");
+      }
+      setProcessing(false);
     }
   };
-
-  // Decrease quantity by 1
-  const handleDecrease = (cartId, currentQty) => {
-    if (currentQty > 1) {
-      updateItemQuantity(cartId, currentQty - 1);
-    } else {
-      alert("Quantity cannot be less than 1!");
-    }
-  };
-
-  // If cart is empty, show a message
-  if (!cart || cart.length === 0) {
-    return <p>Your cart is empty. Please add items first.</p>;
-  }
 
   return (
-    <div>
-      {cart.map((item) => (
-        <div key={item.id} className="border rounded-lg p-3 mb-4 shadow-sm flex items-center space-x-4">
-          {/* Product Image */}
-          <img
-            src={item.images?.[0]?.image || "/placeholder.png"}
-            alt={item.name}
-            className="w-20 h-20 object-cover rounded"
-          />
-
-          <div className="flex-1 min-w-0">
-            <h5 className="text-lg font-semibold">{item.name}</h5>
-            <p className="text-sm text-gray-600">{item.description}</p>
-
-            {/* Quantity Buttons */}
-            <div className="flex items-center space-x-2 mt-2">
-              <button
-                onClick={() => handleDecrease(item.cart_id, item.quantity)}
-                className="bg-gray-200 px-2 py-1 rounded"
-              >
-                -
-              </button>
-              <span>{item.quantity}</span>
-              <button
-                onClick={() => handleIncrease(item.cart_id, item.quantity, item.count_in_stock)}
-                className="bg-gray-200 px-2 py-1 rounded"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* Product Price */}
-          <div className="text-lg font-bold text-blue-600">{item.price} MRO</div>
-        </div>
-      ))}
-
-      {/* Subtotal */}
-      <div className="flex justify-between items-center border-t pt-4">
-        <h5 className="text-lg font-semibold">Subtotal</h5>
-        <span className="text-xl font-bold text-red-600">
-          {calculateTotalPrice()} MRO
-        </span>
+    <div className="max-w-lg mx-auto rounded-2xl p-8">
+      <div className="text-center mb-8">
+        <CreditCard className="mx-auto w-16 h-16 text-[#1f2937] mb-4" />
+        <h2 className="text-3xl font-bold text-[#1f2937]">Payment Details</h2>
       </div>
+
+      {errorMessage && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 flex items-center">
+          <AlertTriangle className="text-red-500 mr-4 w-8 h-8" />
+          <span className="text-red-800 font-medium">{errorMessage}</span>
+        </div>
+      )}
+
+      {succeeded ? (
+        <div className="text-center">
+          <CheckCircle className="mx-auto w-24 h-24 text-green-500 mb-6" />
+          <h3 className="text-2xl font-bold text-green-800 mb-4">Payment Successful!</h3>
+          <p className="text-gray-600">Your order has been confirmed and processed.</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <CardElement 
+              options={{ 
+                style: { 
+                  base: { 
+                    fontSize: '18px',
+                    color: '#1f2937',
+                    '::placeholder': { color: '#9ca3af' }
+                  } 
+                },
+                hidePostalCode: true 
+              }} 
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={!stripe || processing || !clientSecret}
+            className="w-full py-4 bg-[#1f2937] text-white rounded-lg hover:bg-[#374151] transition-colors disabled:opacity-50"
+          >
+            {processing ? "Processing Payment..." : "Pay Now"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

@@ -18,7 +18,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'ordered_at', 'status', 'total_price', 'items','delivery_info']
+        fields = ['id', 'customer', 'ordered_at', 'status', 'total_price', 'items','delivery_info','payment']
         read_only_fields = ['customer']
 
     # ✅ Fetch delivery info dynamically

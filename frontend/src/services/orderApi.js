@@ -23,6 +23,7 @@ api.interceptors.request.use(
 );
 
 export const OrderAPI = {
+  
   getOrders: async () => {
     try {
       const response = await api.get('/orders/');
@@ -43,27 +44,32 @@ export const OrderAPI = {
     }
   },
 
-  addOrder: async () => {
-    try {
-      const response = await api.post('/orders/', {
-        // shipping_address: orderData.shipping_address,
-        // notes: orderData.notes || '',
-        // status: 'Pending', // Default status
-      });
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        throw new Error(
-          error.response.data.detail || 
-          error.response.data.error || 
-          'Failed to create order'
-        );
-      }
-      console.error('Error while confirming the order: ', error);
-      throw error;
-    }
-  },
+  // without payment
+  // addOrder: async () => {
+  //   try {
+  //     const response = await api.post('/orders/', {
+  //       // shipping_address: orderData.shipping_address,
+  //       // notes: orderData.notes || '',
+  //       // status: 'Pending', // Default status
+  //     });
+  //     return response.data;
+  //   } catch (error) {
+  //     if (error.response) {
+  //       console.error('Error response:', error.response.data);
+  //       throw new Error(
+  //         error.response.data.detail || 
+  //         error.response.data.error || 
+  //         'Failed to create order'
+  //       );
+  //     }
+  //     console.error('Error while confirming the order: ', error);
+  //     throw error;
+  //   }
+  // },
+
+  // Finalize the order by providing the payment ID to the backend.
+  finalizeOrder: (paymentId) =>
+    api.post("http://localhost:8000/api/orders/finalize-order/", { payment_id: paymentId }),
 
   updateOrderStatus: async (orderId, data) => {
     try {

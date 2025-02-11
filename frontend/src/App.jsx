@@ -17,6 +17,7 @@ import PassOrder from './pages/PassOrder'
 import { MantineProvider } from '@mantine/core';
 import { CartProvider } from './context/CartContext';
 import AlertComponent from './components/Alert';
+import CheckoutFlow from './components/Stepper';
 
 
 function App() {
@@ -31,7 +32,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* client side */}
+          {/* customer side */}
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetail />} />
@@ -53,21 +54,8 @@ function App() {
               </ClientPrivateRoute>
             }
           />
-          {/* <Route
-            path="/products"
-            element={
-              <ClientPrivateRoute>
-                <Products />
-              </ClientPrivateRoute>
-            }
-          />  
+          <Route path="/checkout" element={<CheckoutFlow />} />
 
-          <Route path="/product/:id" element={
-              <ClientPrivateRoute>
-                <ProductDetail />
-              </ClientPrivateRoute>
-
-            } /> */}
 
 
           {/* admin side */}

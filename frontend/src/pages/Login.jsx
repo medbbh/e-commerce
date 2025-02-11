@@ -14,10 +14,11 @@ export default function Login() {
     e.preventDefault();
     setError('');
     const success = await loginUser(email, password);
+    console.log(JSON.parse(localStorage.getItem('authTokens')));
     if (success) {
-      if (JSON.parse(localStorage.getItem('authTokens')).user.role == 3){
+      if (JSON.parse(localStorage.getItem('authTokens')).role == 3){
         navigate('/');
-      }else if(JSON.parse(localStorage.getItem('authTokens')).user.role == 2){
+      }else if(JSON.parse(localStorage.getItem('authTokens')).role == 2){
         navigate('/admin/dashboard');
       }
     } else {
